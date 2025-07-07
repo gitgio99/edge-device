@@ -9,8 +9,10 @@ int main() {
      // 1. 포트 목록 정의
     // 명시적으로 ID와 포트 매핑
     std::vector<std::pair<int, std::string>> board_info = {
-        {1, "/dev/ttyAMA1"}, // board 1 <-> UART3
-        {2, "/dev/ttyAMA0"}  // board 2 <-> UART0
+        {1, "/dev/ttyAMA0"}, // board 1 <-> UART0
+        {2, "/dev/ttyAMA2"},  // board 2 <-> UART2
+        {3, "/dev/ttyAMA1"},  // board 3 <-> UART1
+        {4, "/dev/ttyAMA3"}   // board 4 <-> UART3
     };
 
     std::vector<std::shared_ptr<BoardController>> boards;

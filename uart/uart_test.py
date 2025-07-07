@@ -7,7 +7,7 @@ ETX = 0x03
 CMD_LCD_ON  = 0x01
 CMD_LCD_OFF = 0x02
 
-MY_ID = 2
+MY_ID = 4  #1 <-> AMA0, 2 <-> AMA2 , 3<-> AMA1
 DST_MASK = (1 << (MY_ID - 1))  # 0x01
 
 def reverse(val, bits):
@@ -42,6 +42,6 @@ def encode_frame(cmd):
     return bytes(frame)
 
 # 예제: /dev/ttyUSB0 사용 시
-ser = serial.Serial('/dev/ttyAMA0', 115200, timeout=1)
-# ser.write(encode_frame(CMD_LCD_ON))  # LD2 ON 명령 전송
-ser.write(encode_frame(CMD_LCD_OFF))  # LD2 OFF 명령 전송
+ser = serial.Serial('/dev/ttyAMA3', 115200, timeout=1)
+ser.write(encode_frame(CMD_LCD_ON))  # LD2 ON 명령 전송
+# ser.write(encode_frame(CMD_LCD_OFF))  # LD2 OFF 명령 전송
