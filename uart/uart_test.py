@@ -1,13 +1,16 @@
 import serial
+import time
 
 DLE = 0x10
 STX = 0x02
 ETX = 0x03
+ACK = 0xAA
+NACK = 0x55
 
 CMD_LCD_ON  = 0x01
 CMD_LCD_OFF = 0x02
 
-MY_ID = 4  #1 <-> AMA0, 2 <-> AMA2 , 3<-> AMA1
+MY_ID = 4  #1 <-> AMA0, 2 <-> AMA2 , 3<-> AMA1 , 4<-> AMA3
 DST_MASK = (1 << (MY_ID - 1))  # 0x01
 
 def reverse(val, bits):
@@ -41,7 +44,36 @@ def encode_frame(cmd):
     frame += [DLE, ETX]
     return bytes(frame)
 
-# 예제: /dev/ttyUSB0 사용 시
-ser = serial.Serial('/dev/ttyAMA3', 115200, timeout=1)
-ser.write(encode_frame(CMD_LCD_ON))  # LD2 ON 명령 전송
-# ser.write(encode_frame(CMD_LCD_OFF))  # LD2 OFF 명령 전송
+def wait_for_ack(ser, timeout=1.0):
+    start = time.time()
+    while time.time() - start < timeout:
+        if ser.in_waiting:
+            resp = ser.read(1)
+            if resp:
+                if resp[0] == ACK:
+                    print("ACK received")
+                    return True
+                elif resp[0] == NACK:
+                    print("NACK received")
+                    return False
+    print("Timeout waiting for ACK/NACK")
+    return False
+
+def send_cmd_with_ack(ser, cmd, retries=3):
+    frame = encode_frame(cmd)
+    for attempt in range(retries):
+        print(f"Sending command (attempt {attempt+1})...")
+        ser.write(frame)
+        if wait_for_ack(ser):
+            print("Command acknowledged by device.")
+            return True
+        else:
+            print("No ACK or NACK received, retrying...")
+            time.sleep(0.1)
+    print("Failed to get ACK after retries!")
+    return False
+
+if __name__ == "__main__":
+    ser = serial.Serial('/dev/ttyAMA3', 115200, timeout=0.1)
+    send_cmd_with_ack(ser, CMD_LCD_ON)
+    # send_cmd_with_ack(ser, CMD_LCD_OFF)

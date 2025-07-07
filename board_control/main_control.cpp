@@ -20,18 +20,31 @@ int main() {
         boards.push_back(std::make_shared<BoardController>(port, id));
     }
 
-     // 3. 각 보드에 대해 동시에 LCD ON 명령 전송 (멀티스레드)
+    // 3. 각 보드에 대해 동시에 LCD ON 명령 전송 (멀티스레드, ACK/NACK 포함)
     std::vector<std::thread> threads;
-    for (auto& board : boards) {
-        threads.emplace_back([&board]() {
-            board->send_lcd_on();  // 동시에 ON
+    std::vector<bool> results(boards.size(), false);
+
+    for (size_t i = 0; i < boards.size(); ++i) {
+        threads.emplace_back([&, i]() {
+            results[i] = boards[i]->send_lcd_on_with_ack(3, 1000);  // 3회 재시도, 타임아웃 1초
         });
     }
 
     // 4. 모든 스레드 종료 대기
     for (auto& t : threads) t.join();
 
-    std::cout << "All LCDs turned ON simultaneously!" << std::endl;
+    bool all_ok = true;
+    for (size_t i = 0; i < results.size(); ++i) {
+        if (!results[i]) {
+            std::cout << "[Board " << (i + 1) << "] Error: LCD ON command not acknowledged!" << std::endl;
+            all_ok = false;
+        }
+    }
+
+    if (all_ok)
+        std::cout << "All LCDs turned ON and acknowledged!" << std::endl;
+    else
+        std::cout << "Some LCDs failed to acknowledge the ON command." << std::endl;
 
     return 0;
 }
